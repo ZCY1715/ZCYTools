@@ -32,6 +32,9 @@ const com = computed(() => componentList[store.toolIndex])
 
 .container> :first-child {
   border-radius: 20px;
+  width: 100%;
+  height: 100%;
+  background-image: radial-gradient(ellipse closest-side at center, rgb(14, 10, 88), rgb(34, 34, 34));
 }
 
 .bodyBorder {
@@ -40,8 +43,6 @@ const com = computed(() => componentList[store.toolIndex])
   left: 10px;
   width: calc(100% - 20px);
   height: calc(100% - 20px);
-  text-align: center;
-  font-size: 24px;
   border-radius: 20px;
   transition: all .3s;
 }

@@ -34,67 +34,67 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, onUnmounted } from 'vue'
+import { ref, onMounted, watch, onBeforeUnmount } from 'vue'
 import Uploader from 'src/utils/Uploader'
 import { Loading, Notify } from 'quasar'
 import { formatTime } from 'src/utils/helper'
+import useStore from 'stores/useStore'
 
-
+const store = useStore()
 const isActive = ref(false)
 const title = ref("")
-const musicURLs = ref([])
 const duration = ref(0)
 const currentTime = ref(0)
-
-function loadMusic(music) {
-  Loading.show()
-
-  isActive.value = false
-  const url = window.URL.createObjectURL(music)
-
-  const newAudio = new Audio(url)
-
-  const onSuccess = () => {
-    title.value = music.name
-    duration.value = 0
-    audioRef.value.src = url
-    musicURLs.value.push(url)
-
-    audioRef.value.addEventListener("loadedmetadata", () => {
-      duration.value = Math.floor(audioRef.value.duration)
-      Loading.hide()
-      Notify.create({
-        type: "positive",
-        message: "加载成功!",
-      })
-
-    }, { once: true })
-
-  }
-
-  const onFail = () => {
-    Loading.hide()
-    Notify.create({
-      type: "negative",
-      message: "文件类型不支持!",
-    })
-  }
-
-  newAudio.addEventListener("loadeddata", onSuccess, { once: true })
-  newAudio.addEventListener("error", onFail, { once: true })
-
-}
-
-onUnmounted(() => {
-  musicURLs.value.forEach(url => {
-    window.URL.revokeObjectURL(url)
-  })
-  musicURLs.value = []
-})
-
 const audioRef = ref(null)
 const volume = ref(60)
 const showVolume = ref(false)
+const analyserRef = ref(null)
+const dataArray = ref(null)
+const containerRef = ref(null)
+const openFileRef = ref(null)
+const canvasRef = ref(null)
+const timer = ref(null)
+
+const onSuccess = (name, url) => {
+  title.value = name
+  duration.value = 0
+
+  if (audioRef.value.src) {
+    window.URL.revokeObjectURL(audioRef.value.src)
+  }
+  audioRef.value.src = url
+
+  audioRef.value.addEventListener("loadedmetadata", () => {
+    duration.value = Math.floor(audioRef.value.duration)
+    Loading.hide()
+    Notify.create({
+      type: "positive",
+      message: "加载成功!",
+    })
+
+  }, { once: true })
+
+}
+
+const onFail = () => {
+  Loading.hide()
+  Notify.create({
+    type: "negative",
+    message: "文件类型不支持!",
+  })
+}
+
+function loadMusic(music) {
+  Loading.show()
+  isActive.value = false
+
+  const url = window.URL.createObjectURL(music)
+  const newAudio = new Audio(url)
+
+  newAudio.addEventListener("loadeddata", () => onSuccess(music.name, url), { once: true })
+  newAudio.addEventListener("error", onFail, { once: true })
+
+}
 
 const setVolume = () => {
   audioRef.value.volume = volume.value / 100
@@ -102,10 +102,11 @@ const setVolume = () => {
 
 watch(volume, setVolume)
 
-const analyserRef = ref(null)
-const dataArray = ref(null)
-const containerRef = ref(null)
-const openFileRef = ref(null)
+const onTimeUpdate = () => currentTime.value = audioRef.value.currentTime
+const onEnded = () => {
+  currentTime.value = 0
+  isActive.value = false
+}
 
 onMounted(() => {
 
@@ -127,21 +128,22 @@ onMounted(() => {
     loadMusic(music)
   })
 
-  audioRef.value.addEventListener("timeupdate", () => {
-    currentTime.value = audioRef.value.currentTime
-  })
+  audioRef.value.addEventListener("timeupdate", onTimeUpdate)
+  audioRef.value.addEventListener("ended", onEnded)
 
-  audioRef.value.addEventListener("ended", () => {
-    currentTime.value = 0
-    isActive.value = false
-  })
+  if (store.audio.url) {
+    audioRef.value.src = store.audio.url
+    title.value = store.audio.title
+    volume.value = store.audio.volume
+    duration.value = store.audio.duration
+    audioRef.value.currentTime = store.audio.currentTime
+  }
 
   setVolume()
 
 })
 
-const canvasRef = ref(null)
-const timer = ref(null)
+
 function draw() {
   timer.value = requestAnimationFrame(draw)
 
@@ -180,13 +182,7 @@ watch(isActive, () => {
 }, { flush: "post" })
 
 const onClick = () => {
-  if (!audioRef.value.src) {
-    Notify.create({
-      type: "info",
-      message: "请导入音乐！"
-    })
-    return
-  }
+  if (!audioRef.value.src) return
   isActive.value = !isActive.value
 }
 
@@ -195,13 +191,23 @@ const progressChange = v => {
   audioRef.value.currentTime = v
 }
 
+onBeforeUnmount(() => {
+  cancelAnimationFrame(timer.value)
+  audioRef.value.removeEventListener("timeupdate", onTimeUpdate)
+  audioRef.value.removeEventListener("ended", onEnded)
+  store.saveAudio(
+    audioRef.value.src,
+    title.value,
+    duration.value,
+    currentTime.value,
+    volume.value
+  )
+})
+
 </script>
 
 <style module>
 .container {
-  width: 100%;
-  height: 100%;
-  background-image: radial-gradient(ellipse closest-side at center, rgb(14, 10, 88), rgb(34, 34, 34));
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -272,7 +278,6 @@ const progressChange = v => {
   display: inline-block;
   color: orange;
   white-space: nowrap;
-  user-select: none;
   animation: roll 10s infinite linear normal;
 }
 

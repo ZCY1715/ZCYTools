@@ -1,6 +1,9 @@
 import { app, BrowserWindow, nativeTheme, Menu, ipcMain } from 'electron'
+import { initialize, enable } from '@electron/remote/main'
 import path from 'path'
 import os from 'os'
+
+initialize()
 
 const platform = process.platform || os.platform()
 
@@ -35,6 +38,8 @@ function createWindow() {
     const [x, y] = mainWindow.getPosition()
     mainWindow.setPosition(x + data.x, y + data.y)
   })
+
+  enable(mainWindow.webContents)
 
   mainWindow.loadURL(process.env.APP_URL)
 

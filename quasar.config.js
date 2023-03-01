@@ -23,7 +23,7 @@ module.exports = configure(function (/* ctx */) {
     // --> boot files are part of "main.js"
     // https://v2.quasar.dev/quasar-cli/boot-files
     boot: [
-
+      'menu.js'
     ],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#css
@@ -91,7 +91,8 @@ module.exports = configure(function (/* ctx */) {
           message: "loading..."
         },
         notify: {
-          timeout: 1000
+          timeout: 1000,
+          position: "top-right",
         }
       },
 

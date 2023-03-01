@@ -1,5 +1,5 @@
 <template>
-  <q-fab :class="$style.container" color="amber" text-color="black" icon="keyboard_arrow_down" direction="down">
+  <q-fab :class="$style.container" color="amber" text-color="black" icon="keyboard_arrow_down" direction="down" glossy>
     <q-fab-action v-for="item, index of menuLists" color="amber" text-color="black" :icon="item.icon"
       @click="() => onClick(index)" :label="item.text">
     </q-fab-action>
@@ -22,7 +22,7 @@ const onClick = index => {
 <style module>
 .container {
   position: fixed;
-  top: 20px;
+  top: 10px;
   right: 20px;
 }
 </style>
