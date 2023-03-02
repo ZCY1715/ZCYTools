@@ -1,27 +1,32 @@
 const vClick = {
   mounted(el, binding) {
+
+    const { click, dbclick } = binding.value
     let clickTimer = null
 
-    // 单击
-    el.addEventListener('click', () => {
+    click && el.addEventListener('click', () => {
+
+      if (!dbclick) return click()
+
+      if (clickTimer) {
+        window.clearTimeout(clickTimer)
+        clickTimer = null
+        return
+      }
+      clickTimer = setTimeout(() => {
+        click()
+        clickTimer = null
+      }, 300)
+    })
+
+    dbclick && el.addEventListener('dblclick', () => {
       if (clickTimer) {
         window.clearTimeout(clickTimer)
         clickTimer = null
       }
-      clickTimer = setTimeout(() => {
-        binding.value.click()
-      }, 300)
+      dbclick()
     })
-
-    // 双击
-    el.addEventListener('dblclick', () => {
-      if (clickTimer) {
-        window.clearTimeout(clickTimer);
-        clickTimer = null;
-      }
-      binding.value.dbclick()
-    })
-  },
+  }
 }
 
 export default () => {

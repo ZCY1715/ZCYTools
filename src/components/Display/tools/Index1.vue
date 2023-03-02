@@ -20,7 +20,7 @@
         <div :class="$style.left" ref="openFileRef">
           <q-icon name="post_add" size="35px" color="amber" />
         </div>
-        <div :class="$style.middle" @click="onClick">
+        <div :class="$style.middle" @click="toggleActive">
           <q-icon :name="isActive ? 'pause_circle' : 'play_circle'" size="70px" color="amber" />
         </div>
         <div :class="$style.right" tabindex="0" @focus="showVolume = true">
@@ -37,8 +37,10 @@
 import { ref, onMounted, watch, onBeforeUnmount } from 'vue'
 import Uploader from 'src/utils/Uploader'
 import { Loading, Notify } from 'quasar'
-import { formatTime } from 'src/utils/helper'
+import { formatTime, debounce } from 'src/utils/helper'
 import useStore from 'stores/useStore'
+import useKeyboard from 'src/hooks/useKeyboard'
+import useAudioAnalyserData from 'src/hooks/useAudioAnalyserData'
 
 const store = useStore()
 const isActive = ref(false)
@@ -48,12 +50,15 @@ const currentTime = ref(0)
 const audioRef = ref(null)
 const volume = ref(60)
 const showVolume = ref(false)
-const analyserRef = ref(null)
-const dataArray = ref(null)
 const containerRef = ref(null)
 const openFileRef = ref(null)
 const canvasRef = ref(null)
 const timer = ref(null)
+
+const debounceNOTShowVolume = debounce(() => {
+  showVolume.value = false
+}, 1000)
+const { dataArray, updateDataArray } = useAudioAnalyserData(audioRef)
 
 const onSuccess = (name, url) => {
   title.value = name
@@ -96,11 +101,7 @@ function loadMusic(music) {
 
 }
 
-const setVolume = () => {
-  audioRef.value.volume = volume.value / 100
-}
-
-watch(volume, setVolume)
+watch(volume, () => audioRef.value.volume = volume.value / 100)
 
 const onTimeUpdate = () => currentTime.value = audioRef.value.currentTime
 const onEnded = () => {
@@ -109,15 +110,6 @@ const onEnded = () => {
 }
 
 onMounted(() => {
-
-  const audCtx = new AudioContext()
-  const source = audCtx.createMediaElementSource(audioRef.value)
-  const analyser = audCtx.createAnalyser()
-  analyser.fftSize = 512
-  dataArray.value = new Uint8Array(analyser.frequencyBinCount)
-  source.connect(analyser)
-  analyser.connect(audCtx.destination)
-  analyserRef.value = analyser
 
   new Uploader({ el: containerRef.value, mode: "Drag" }, fileList => {
     const music = fileList[0].file
@@ -139,7 +131,7 @@ onMounted(() => {
     audioRef.value.currentTime = store.audio.currentTime
   }
 
-  setVolume()
+  audioRef.value.volume = volume.value / 100
 
 })
 
@@ -153,7 +145,7 @@ function draw() {
   const { width, height } = canvas
 
   ctx.clearRect(0, 0, width, height)
-  analyserRef.value.getByteFrequencyData(dataArray.value)
+  updateDataArray()
 
   const len = dataArray.value.length / 2.5
   const barWidth = width / len / 2
@@ -170,6 +162,11 @@ function draw() {
 
 }
 
+const toggleActive = () => {
+  if (!audioRef.value.src) return
+  isActive.value = !isActive.value
+}
+
 
 watch(isActive, () => {
   if (isActive.value) {
@@ -180,11 +177,6 @@ watch(isActive, () => {
     cancelAnimationFrame(timer.value)
   }
 }, { flush: "post" })
-
-const onClick = () => {
-  if (!audioRef.value.src) return
-  isActive.value = !isActive.value
-}
 
 const progressChange = v => {
   currentTime.value = v
@@ -202,6 +194,31 @@ onBeforeUnmount(() => {
     currentTime.value,
     volume.value
   )
+})
+
+useKeyboard({
+  onUp: () => {
+    volume.value = volume.value + 5 > 100 ? 100 : volume.value + 5
+    showVolume.value = true
+    debounceNOTShowVolume()
+  },
+  onDown: () => {
+    volume.value = volume.value - 5 < 0 ? 0 : volume.value - 5
+    showVolume.value = true
+    debounceNOTShowVolume()
+  },
+  onLeft: () => {
+    if (!audioRef.value.src) return
+    audioRef.value.currentTime = currentTime.value - 5 < 0 ? 0 : currentTime.value - 5
+  },
+  onRight: () => {
+    if (!audioRef.value.src) return
+    if (currentTime.value + 5 > duration.value) return
+    audioRef.value.currentTime = currentTime.value + 5
+  },
+  onSpace: () => {
+    toggleActive()
+  }
 })
 
 </script>

@@ -1,5 +1,5 @@
 <template>
-  <div :class="$style.container" ref="containerRef">
+  <div :class="$style.container" ref="containerRef" tabindex="0" @focus="showVolume = false">
     <div :class="$style.openFile" v-if="!isInit">
       <span ref="openFileRef">
         <q-icon name="post_add" size="35px" color="amber" />
@@ -8,19 +8,28 @@
     </div>
     <video v-show="isInit" ref="videoRef" :class="$style.video"
       v-click="{ click: toggleActive, dbclick: toggleFullscreen }" />
-    <div :class="$style.controller" v-show="showController">
-      <span :class="$style.left">
-        <q-icon size="35px" color="amber" />
-        <q-icon :name="volume === 0 ? 'volume_off' : 'volume_up'" size="35px" color="amber" />
-      </span>
-      <span :class="$style.middle">
-        <q-icon :name="isActive ? 'pause_circle' : 'play_circle'" size="50px" color="amber" @click="toggleActive" />
-      </span>
-      <span :class="$style.right">
-        <q-icon name="picture_in_picture" size="35px" color="amber" @click="togglePicInPic" />
-        <q-icon :name="isFullScreen ? 'fullscreen_exit' : 'fullscreen'" size="35px" color="amber"
-          @click="toggleFullscreen" />
-      </span>
+    <div :class="$style.controller" v-show="!isSlient">
+      <div :class="$style.progress">
+        <q-slider :model-value="currentTime" @update:model-value="progressChange" color="amber" thumb-color="orange"
+          :min="0" :max="duration" :class="$style.slider" dark />
+        <span :class="$style.displayTime">{{ formatTime(Math.floor(currentTime)) }} / {{ formatTime(duration) }}</span>
+      </div>
+      <div :class="$style.warp">
+        <span :class="$style.left">
+          <q-icon :name="volume === 0 ? 'volume_off' : 'volume_up'" size="35px" color="amber" tabindex="0"
+            @focus="showVolume = true" />
+          <q-slider :class="[showVolume ? $style.volumeShow : $style.volumeHide]" v-model="volume" :min="0" :max="100"
+            color="amber" dark :label-value="volume" label />
+        </span>
+        <span :class="$style.middle">
+          <q-icon :name="isActive ? 'pause_circle' : 'play_circle'" size="50px" color="amber" @click="toggleActive" />
+        </span>
+        <span :class="$style.right">
+          <q-icon name="picture_in_picture" size="35px" color="amber" @click="togglePicInPic" />
+          <q-icon :name="isFullscreen ? 'fullscreen_exit' : 'fullscreen'" size="35px" color="amber"
+            @click="toggleFullscreen" />
+        </span>
+      </div>
     </div>
   </div>
 </template>
@@ -32,6 +41,10 @@ import { Notify, Loading } from 'quasar'
 import useStore from 'stores/useStore'
 import { formatTime, debounce } from 'src/utils/helper'
 import useClick from 'src/hooks/useClick'
+import useFullscreen from 'src/hooks/useFullscreen'
+import usePicInPic from 'src/hooks/usePicInPic'
+import useSilentMouse from 'src/hooks/useSilentMouse'
+import useKeyboard from 'src/hooks/useKeyboard'
 
 const store = useStore()
 const { vClick } = useClick()
@@ -44,9 +57,19 @@ const title = ref("")
 const duration = ref(0)
 const currentTime = ref(0)
 const volume = ref(60)
-const isPictureInPicture = ref(false)
-const isFullScreen = ref(false)
-const showController = ref(true)
+const showVolume = ref(false)
+const { togglePicInPic } = usePicInPic(videoRef, {
+  onLeave: () => {
+    if (videoRef.value.paused) {
+      isActive.value = false
+    }
+  },
+  beforeToggle: () => isInit.value
+})
+const { isFullscreen, toggleFullscreen } = useFullscreen(containerRef)
+const { isSlient, debounceSlient } = useSilentMouse({
+  beforeToggle: () => isInit.value
+})
 
 const onSuccess = (name, url) => {
   isActive.value = false
@@ -99,42 +122,18 @@ const toggleActive = () => {
   isActive.value = !isActive.value
 }
 
-const onEnterpictureinpicture = () => isPictureInPicture.value = true
-const onLeavepictureinpicture = () => {
-  isPictureInPicture.value = false
-  if (videoRef.value.paused) {
-    isActive.value = false
-  }
-}
-const togglePicInPic = () => {
-  if (!isInit.value) return
-  if (isPictureInPicture.value) {
-    document.exitPictureInPicture()
-  } else {
-    videoRef.value.requestPictureInPicture()
-  }
-}
-const onFullscreenChange = () => {
-  isFullScreen.value = document.fullscreen ?? (!!document.fullscreenElement)
-}
-const toggleFullscreen = () => {
-  if (isFullScreen.value) {
-    document.exitFullscreen()
-  } else {
-    containerRef.value.requestFullscreen()
-  }
+const progressChange = v => {
+  currentTime.value = v
+  videoRef.value.currentTime = v
 }
 
-const debounceNotShow = debounce(() => {
-  showController.value = false
-  document.querySelector("html").style = "cursor: none;"
-}, 3000)
-const onMouseMove = () => {
-  showController.value = true
-  document.querySelector("html").removeAttribute("style")
-  if (isInit.value) {
-    debounceNotShow()
-  }
+watch(isActive, () => isActive.value ? videoRef.value.play() : videoRef.value.pause())
+watch(volume, () => videoRef.value.volume = volume.value / 100)
+
+const onTimeUpdate = () => currentTime.value = videoRef.value.currentTime
+const onEnded = () => {
+  currentTime.value = 0
+  isActive.value = false
 }
 
 onMounted(() => {
@@ -147,10 +146,10 @@ onMounted(() => {
     loadVideo(file)
   })
 
-  videoRef.value.addEventListener("enterpictureinpicture", onEnterpictureinpicture)
-  videoRef.value.addEventListener("leavepictureinpicture", onLeavepictureinpicture)
-  document.addEventListener("fullscreenchange", onFullscreenChange)
-  containerRef.value.addEventListener("mousemove", onMouseMove)
+  videoRef.value.addEventListener("timeupdate", onTimeUpdate)
+  videoRef.value.addEventListener("ended", onEnded)
+
+
   if (store.video.url) {
     videoRef.value.src = store.video.url
     title.value = store.video.title
@@ -162,14 +161,11 @@ onMounted(() => {
 
 })
 
-watch(isActive, () => isActive.value ? videoRef.value.play() : videoRef.value.pause())
-
 onBeforeUnmount(() => {
-  videoRef.value.removeEventListener("enterpictureinpicture", onEnterpictureinpicture)
-  videoRef.value.removeEventListener("leavepictureinpicture", onLeavepictureinpicture)
-  document.removeEventListener("fullscreenchange", onFullscreenChange)
-  containerRef.value.removeEventListener("mousemove", onMouseMove)
-  document.querySelector("html").removeAttribute("style")
+
+  videoRef.value.removeEventListener("timeupdate", onTimeUpdate)
+  videoRef.value.removeEventListener("ended", onEnded)
+
   store.saveVideo(
     videoRef.value.src,
     title.value,
@@ -177,6 +173,43 @@ onBeforeUnmount(() => {
     currentTime.value,
     volume.value
   )
+})
+
+const debounceNOTShowVolume = debounce(() => {
+  showVolume.value = false
+}, 1000)
+
+useKeyboard({
+  onUp: () => {
+    volume.value = volume.value + 5 > 100 ? 100 : volume.value + 5
+    showVolume.value = true
+    isSlient.value = false
+    debounceSlient()
+    debounceNOTShowVolume()
+  },
+  onDown: () => {
+    volume.value = volume.value - 5 < 0 ? 0 : volume.value - 5
+    showVolume.value = true
+    isSlient.value = false
+    debounceSlient()
+    debounceNOTShowVolume()
+  },
+  onLeft: () => {
+    if (!videoRef.value.src) return
+    isSlient.value = false
+    debounceSlient()
+    videoRef.value.currentTime = currentTime.value - 5 < 0 ? 0 : currentTime.value - 5
+  },
+  onRight: () => {
+    if (!videoRef.value.src) return
+    isSlient.value = false
+    debounceSlient()
+    if (currentTime.value + 5 > duration.value) return
+    videoRef.value.currentTime = currentTime.value + 5
+  },
+  onSpace: () => {
+    toggleActive()
+  }
 })
 
 </script>
@@ -230,23 +263,66 @@ onBeforeUnmount(() => {
   bottom: 0;
   left: 0;
   width: 100%;
-  height: 70px;
-  background-color: rgba(0, 0, 0, 0.3);
-  border-radius: 0 0 20px 20px;
+  height: 100px;
+  background-color: rgba(0, 0, 0, .3);
+  display: flex;
+  flex-direction: column;
+}
+
+.progress {
+  width: 100%;
+  height: 28px;
+}
+
+.displayTime {
+  color: #aaa;
+  position: absolute;
+  right: 20px;
+  top: 10px;
+}
+
+.slider {
+  transform: translateY(-14px);
+  width: 98%;
+}
+
+.warp {
+  width: 100%;
+  flex: 1;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: space-around;
+  border-radius: 0 0 20px 20px;
 }
 
 .left,
 .right {
-  margin: 0 50px 0 50px;
+  width: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .left>*,
 .right>*,
 .middle>* {
-  margin: 0 10px 0 10px;
   cursor: pointer;
+}
+
+.left>*,
+.right>* {
+  margin: 0 10px 0 10px;
+}
+
+.volumeShow {
+  width: 100px;
+  opacity: 1;
+  transition: .3s;
+}
+
+.volumeHide {
+  width: 0;
+  opacity: 0;
+  transition: .3s;
 }
 </style>
