@@ -1,4 +1,4 @@
-import { app, BrowserWindow, nativeTheme, Menu, ipcMain } from 'electron'
+import { app, BrowserWindow, nativeTheme, Menu, ipcMain, desktopCapturer } from 'electron'
 import { initialize, enable } from '@electron/remote/main'
 import path from 'path'
 import os from 'os'
@@ -37,6 +37,11 @@ function createWindow() {
   ipcMain.handle('drag', (e, data) => {
     const [x, y] = mainWindow.getPosition()
     mainWindow.setPosition(x + data.x, y + data.y)
+  })
+
+  ipcMain.handle('collectMediaSources', async (e, types) => {
+    const sources = await desktopCapturer.getSources({ types })
+    mainWindow.webContents.send('getMediaSources', JSON.stringify(sources))
   })
 
   enable(mainWindow.webContents)

@@ -1,20 +1,21 @@
 <template>
   <q-fab :class="$style.container" color="amber" text-color="black" icon="keyboard_arrow_down" direction="down" glossy>
-    <q-fab-action v-for="item, index of menuLists" color="amber" text-color="black" :icon="item.icon"
-      @click="() => onClick(index)" :label="item.text">
+    <q-fab-action v-for="item of menuLists" color="amber" text-color="black" :icon="item.icon"
+      @click="() => onClick(item.name)" :label="item.text">
     </q-fab-action>
   </q-fab>
 </template>
 
 <script setup>
-import useStore from 'src/stores/useStore'
 import { menuLists } from 'src/utils/constants'
+import { useRoute, useRouter } from 'vue-router'
 
-const store = useStore()
+const route = useRoute()
+const router = useRouter()
 
-const onClick = index => {
-  if (store.toolIndex === index) return
-  store.toolIndex = index
+const onClick = name => {
+  if (route.name === name) return
+  router.push({ name })
 }
 
 </script>

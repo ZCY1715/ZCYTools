@@ -22,3 +22,34 @@ export function debounce(fn, delay) {
   }
   return _debounce
 }
+
+export function download(filename, blob) {
+  const a = document.createElement("a")
+  const objUrl = URL.createObjectURL(blob)
+  a.href = objUrl
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  URL.revokeObjectURL(objUrl)
+  a.remove()
+}
+
+
+export function mergeStream(sysStream, micStream) {
+  if (!sysStream.getAudioTracks().length) {
+    sysStream.addTrack(micStream.getAudioTracks()[0])
+    return sysStream
+  }
+  const context = new AudioContext();
+  const baseSource = context.createMediaStreamSource(sysStream)
+  const extraSource = context.createMediaStreamSource(micStream)
+  const dest = context.createMediaStreamDestination()
+
+  const baseGain = context.createGain()
+  const extraGain = context.createGain()
+  baseGain.gain.value = 0.8
+  extraGain.gain.value = 0.8
+  baseSource.connect(baseGain).connect(dest)
+  extraSource.connect(extraGain).connect(dest)
+  return dest.stream
+}

@@ -45,6 +45,7 @@ import useFullscreen from 'src/hooks/useFullscreen'
 import usePicInPic from 'src/hooks/usePicInPic'
 import useSilentMouse from 'src/hooks/useSilentMouse'
 import useKeyboard from 'src/hooks/useKeyboard'
+import getBlobDuration from 'get-blob-duration'
 
 const store = useStore()
 const { vClick } = useClick()
@@ -71,10 +72,9 @@ const { isSlient, debounceSlient } = useSilentMouse({
   beforeToggle: () => isInit.value
 })
 
-const onSuccess = (name, url) => {
+const onSuccess = async (name, url) => {
   isActive.value = false
   title.value = name
-  duration.value = 0
   if (isInit.value) {
     window.URL.revokeObjectURL(videoRef.value.src)
   } else {
@@ -82,15 +82,13 @@ const onSuccess = (name, url) => {
   }
   videoRef.value.src = url
 
-  videoRef.value.addEventListener("loadedmetadata", () => {
-    duration.value = Math.floor(videoRef.value.duration)
-    Loading.hide()
-    Notify.create({
-      type: "positive",
-      message: "加载成功!",
-    })
+  duration.value = Math.floor(await getBlobDuration(url))
 
-  }, { once: true })
+  Loading.hide()
+  Notify.create({
+    type: "positive",
+    message: "加载成功!",
+  })
 
 }
 

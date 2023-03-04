@@ -1,19 +1,21 @@
 import ContextMenu from '@imengyu/vue3-context-menu'
 
-const menuItems = [
-  {
-    label: "关闭",
-    onClick: () => {
-      window.myWindowAPI.close()
+const crerateMenuItems = () => {
+  return [
+    {
+      label: "关闭",
+      onClick: () => {
+        window.myWindowAPI.close()
+      }
+    },
+    {
+      label: "最小化",
+      onClick: () => {
+        window.myWindowAPI.minimize()
+      }
     }
-  },
-  {
-    label: "最小化",
-    onClick: () => {
-      window.myWindowAPI.minimize()
-    }
-  }
-]
+  ]
+}
 
 class Menu {
   constructor() { }
@@ -22,7 +24,7 @@ class Menu {
       ContextMenu.showContextMenu({
         x: e.pageX,
         y: e.pageY,
-        items: menuItems,
+        items: crerateMenuItems(),
         theme: 'flat'
       })
     })

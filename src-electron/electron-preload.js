@@ -5,19 +5,18 @@ contextBridge.exposeInMainWorld('myWindowAPI', {
   minimize() {
     BrowserWindow.getFocusedWindow().minimize()
   },
-
-  toggleMaximize() {
-    const win = BrowserWindow.getFocusedWindow()
-
-    if (win.isMaximized()) {
-      win.unmaximize()
-    } else {
-      win.maximize()
-    }
-  },
-
   close() {
     BrowserWindow.getFocusedWindow().close()
   },
-  drag: ({ x, y }) => ipcRenderer.invoke('drag', { x, y })
+  drag: ({ x, y }) => ipcRenderer.invoke('drag', { x, y }),
+  getMediaSources: async (types) => new Promise((resolve) => {
+
+    const dealSources = (e, sources) => {
+      resolve(JSON.parse(sources))
+      ipcRenderer.off('getMediaSources', dealSources)
+    }
+    ipcRenderer.on('getMediaSources', dealSources)
+    ipcRenderer.invoke('collectMediaSources', types)
+
+  })
 })

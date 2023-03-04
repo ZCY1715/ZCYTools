@@ -2,7 +2,6 @@ import { defineStore } from 'pinia'
 
 const useStore = defineStore('store', {
   state: () => ({
-    toolIndex: 0,
     audio: {
       url: "",
       title: "",

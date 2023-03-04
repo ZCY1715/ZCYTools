@@ -41,6 +41,7 @@ import { formatTime, debounce } from 'src/utils/helper'
 import useStore from 'stores/useStore'
 import useKeyboard from 'src/hooks/useKeyboard'
 import useAudioAnalyserData from 'src/hooks/useAudioAnalyserData'
+import getBlobDuration from 'get-blob-duration'
 
 const store = useStore()
 const isActive = ref(false)
@@ -60,24 +61,21 @@ const debounceNOTShowVolume = debounce(() => {
 }, 1000)
 const { dataArray, updateDataArray } = useAudioAnalyserData(audioRef)
 
-const onSuccess = (name, url) => {
+const onSuccess = async (name, url) => {
   title.value = name
-  duration.value = 0
 
   if (audioRef.value.src) {
     window.URL.revokeObjectURL(audioRef.value.src)
   }
   audioRef.value.src = url
 
-  audioRef.value.addEventListener("loadedmetadata", () => {
-    duration.value = Math.floor(audioRef.value.duration)
-    Loading.hide()
-    Notify.create({
-      type: "positive",
-      message: "加载成功!",
-    })
+  duration.value = Math.floor(await getBlobDuration(url))
 
-  }, { once: true })
+  Loading.hide()
+  Notify.create({
+    type: "positive",
+    message: "加载成功!",
+  })
 
 }
 
