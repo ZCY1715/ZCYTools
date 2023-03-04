@@ -2,26 +2,34 @@ import { defineStore } from 'pinia'
 
 const useStore = defineStore('store', {
   state: () => ({
-    audio: {
+    canTurnBack: false,
+    index1: {
       url: "",
       title: "",
       duration: 0,
       currentTime: 0,
       volume: 60
     },
-    video: {
+    index2: {
       url: "",
       title: "",
       duration: 0,
       currentTime: 0,
       volume: 60
+    },
+    index3: {
+      eable: false,
+      url: "",
+      title: "",
+      systemVideo: true,
+      humanVideo: true,
     }
   }),
   getters: {
   },
   actions: {
-    saveAudio(url, title, duration, currentTime, volume) {
-      this.audio = {
+    saveIndex1(url, title, duration, currentTime, volume) {
+      this.index1 = {
         url,
         title,
         duration,
@@ -29,8 +37,8 @@ const useStore = defineStore('store', {
         volume
       }
     },
-    saveVideo(url, title, duration, currentTime, volume) {
-      this.video = {
+    saveIndex2(url, title, duration, currentTime, volume) {
+      this.index2 = {
         url,
         title,
         duration,
@@ -38,6 +46,11 @@ const useStore = defineStore('store', {
         volume
       }
     },
+    saveIndex3(eable, url, title) {
+      this.index3.eable = eable
+      this.index3.url = url
+      this.index3.title = title
+    }
   }
 })
 

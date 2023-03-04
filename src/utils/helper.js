@@ -23,14 +23,12 @@ export function debounce(fn, delay) {
   return _debounce
 }
 
-export function download(filename, blob) {
+export function download(filename, url) {
   const a = document.createElement("a")
-  const objUrl = URL.createObjectURL(blob)
-  a.href = objUrl
+  a.href = url
   a.download = filename
   document.body.appendChild(a)
   a.click()
-  URL.revokeObjectURL(objUrl)
   a.remove()
 }
 

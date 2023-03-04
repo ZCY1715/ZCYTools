@@ -18,7 +18,7 @@
       </div>
       <div :class="$style.warp">
         <div :class="$style.left" ref="openFileRef">
-          <q-icon name="post_add" size="35px" color="amber" />
+          <q-icon name="post_add" size="35px" color="amber" v-if="!asPartyThree" />
         </div>
         <div :class="$style.middle" @click="toggleActive">
           <q-icon :name="isActive ? 'pause_circle' : 'play_circle'" size="70px" color="amber" />
@@ -55,6 +55,7 @@ const containerRef = ref(null)
 const openFileRef = ref(null)
 const canvasRef = ref(null)
 const timer = ref(null)
+const asPartyThree = ref(false)
 
 const debounceNOTShowVolume = debounce(() => {
   showVolume.value = false
@@ -107,7 +108,20 @@ const onEnded = () => {
   isActive.value = false
 }
 
-onMounted(() => {
+onMounted(async () => {
+
+  audioRef.value.addEventListener("timeupdate", onTimeUpdate)
+  audioRef.value.addEventListener("ended", onEnded)
+
+  if (store.index3.eable) {
+    asPartyThree.value = true
+    const url = store.index3.url
+    audioRef.value.src = url
+    duration.value = Math.floor(await getBlobDuration(url))
+    title.value = store.index3.title
+    return
+  }
+
 
   new Uploader({ el: containerRef.value, mode: "Drag" }, fileList => {
     const music = fileList[0].file
@@ -118,15 +132,12 @@ onMounted(() => {
     loadMusic(music)
   })
 
-  audioRef.value.addEventListener("timeupdate", onTimeUpdate)
-  audioRef.value.addEventListener("ended", onEnded)
-
-  if (store.audio.url) {
-    audioRef.value.src = store.audio.url
-    title.value = store.audio.title
-    volume.value = store.audio.volume
-    duration.value = store.audio.duration
-    audioRef.value.currentTime = store.audio.currentTime
+  if (store.index1.url) {
+    audioRef.value.src = store.index1.url
+    title.value = store.index1.title
+    volume.value = store.index1.volume
+    duration.value = store.index1.duration
+    audioRef.value.currentTime = store.index1.currentTime
   }
 
   audioRef.value.volume = volume.value / 100
@@ -185,7 +196,10 @@ onBeforeUnmount(() => {
   cancelAnimationFrame(timer.value)
   audioRef.value.removeEventListener("timeupdate", onTimeUpdate)
   audioRef.value.removeEventListener("ended", onEnded)
-  store.saveAudio(
+
+  if (asPartyThree.value) return
+
+  store.saveIndex1(
     audioRef.value.src,
     title.value,
     duration.value,

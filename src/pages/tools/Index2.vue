@@ -148,12 +148,12 @@ onMounted(() => {
   videoRef.value.addEventListener("ended", onEnded)
 
 
-  if (store.video.url) {
-    videoRef.value.src = store.video.url
-    title.value = store.video.title
-    volume.value = store.video.volume
-    duration.value = store.video.duration
-    videoRef.value.currentTime = store.video.currentTime
+  if (store.index2.url) {
+    videoRef.value.src = store.index2.url
+    title.value = store.index2.title
+    volume.value = store.index2.volume
+    duration.value = store.index2.duration
+    videoRef.value.currentTime = store.index2.currentTime
     isInit.value = true
   }
 
@@ -164,7 +164,7 @@ onBeforeUnmount(() => {
   videoRef.value.removeEventListener("timeupdate", onTimeUpdate)
   videoRef.value.removeEventListener("ended", onEnded)
 
-  store.saveVideo(
+  store.saveIndex2(
     videoRef.value.src,
     title.value,
     duration.value,

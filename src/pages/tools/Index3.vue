@@ -15,8 +15,8 @@
       <q-btn color="" rounded glossy :disable="!source" icon="delete_forever" label="清除" @click="onClean" />
       <q-btn-dropdown auto-close rounded glossy color="" label="配置" :disable="isPlay" :disable-dropdown="isPlay">
         <q-list dense padding :class="$style.contorller">
-          <q-toggle v-model="systemVideo" color="amber" label="系统音频" />
-          <q-toggle v-model="humanVideo" color="amber" label="环境音频" />
+          <q-toggle v-model="store.index3.systemVideo" color="amber" label="系统音频" />
+          <q-toggle v-model="store.index3.humanVideo" color="amber" label="环境音频" />
         </q-list>
       </q-btn-dropdown>
     </q-btn-group>
@@ -28,20 +28,25 @@ import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { formatTime, download, mergeStream } from 'src/utils/helper'
 import useMediaRecorder from 'src/hooks/useMediaRecorder'
 import { Notify } from 'quasar'
+import { useRouter } from 'vue-router'
+import useStore from 'stores/useStore'
+import getBlobDuration from 'get-blob-duration'
 
 const isPlay = ref(false)
 const isPause = ref(true)
-const source = ref(null)
+const source = ref("")
 const duration = ref(0)
 const timer = ref(null)
-const systemVideo = ref(true)
-const humanVideo = ref(true)
 const systemVideoStream = ref(null)
 const humanVideoStream = ref(null)
 const controller = ref(null)
+const title = ref("")
+const router = useRouter()
+const store = useStore()
 
 
 onMounted(async () => {
+
   systemVideoStream.value = await navigator.mediaDevices.getUserMedia({
     audio: {
       mandatory: {
@@ -55,10 +60,21 @@ onMounted(async () => {
     }
   })
   humanVideoStream.value = await navigator.mediaDevices.getUserMedia({ video: false, audio: true })
+
+  if (store.index3.eable) {
+    const url = store.index3.url
+    title.value = store.index3.title
+    source.value = url
+    duration.value = Math.floor(await getBlobDuration(url))
+    store.saveIndex3(false, "", "")
+    store.canTurnBack = false
+  }
 })
 
 const onPreview = () => {
-
+  store.saveIndex3(true, source.value, title.value)
+  store.canTurnBack = true
+  router.push({ name: "Index1" })
 }
 
 const onStop = () => {
@@ -74,7 +90,6 @@ const onStartOrPause = () => {
     if (isPause.value) {
       // 继续录制
       controller.value.resume()
-      isPause.value = false
       timer.value = setInterval(() => {
         duration.value++
       }, 1000)
@@ -82,22 +97,23 @@ const onStartOrPause = () => {
     } else {
       // 暂停
       controller.value.pause()
-      isPause.value = true
       clearInterval(timer.value)
       timer.value = null
 
     }
+    isPause.value = !isPause.value
 
   } else {
     // 开始
     onClean()
 
     let stream
-    if (systemVideo.value && humanVideo.value) {
+    const { systemVideo, humanVideo } = store.index3
+    if (systemVideo && humanVideo) {
       stream = mergeStream(systemVideoStream.value, humanVideoStream.value)
-    } else if (humanVideo.value) {
+    } else if (humanVideo) {
       stream = humanVideoStream.value
-    } else if (systemVideo.value) {
+    } else if (systemVideo) {
       stream = systemVideoStream.value
     } else {
       Notify.create({
@@ -108,7 +124,10 @@ const onStartOrPause = () => {
     }
 
     controller.value = useMediaRecorder(stream, {
-      onStop: blob => source.value = blob
+      onStop: blob => {
+        source.value = window.URL.createObjectURL(blob)
+        title.value = `zcytools_${new Date().getTime()}.mp3`
+      }
     })
 
     isPlay.value = true
@@ -121,19 +140,23 @@ const onStartOrPause = () => {
   }
 }
 
-const onSave = () => {
-  download(`zcytools_${new Date().getTime()}.mp3`, source.value)
-}
+const onSave = () => download(title.value, source.value)
 
 const onClean = () => {
-  source.value = null
+  if (source.value) {
+    if (!store.index3.eable) {
+      window.URL.revokeObjectURL(source.value)
+    }
+    source.value = ""
+  }
   duration.value = 0
   controller.value = null
+  title.value = ""
 }
 
 onBeforeUnmount(() => {
   clearInterval(timer.value)
-  controller.value && controller.value.stop()
+  onClean()
 })
 
 </script>
