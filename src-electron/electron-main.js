@@ -39,11 +39,6 @@ function createWindow() {
     mainWindow.setPosition(x + data.x, y + data.y)
   })
 
-  ipcMain.handle('collectMediaSources', async (e, types) => {
-    const sources = await desktopCapturer.getSources({ types })
-    mainWindow.webContents.send('getMediaSources', JSON.stringify(sources))
-  })
-
   enable(mainWindow.webContents)
 
   mainWindow.loadURL(process.env.APP_URL)

@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import { BrowserWindow } from '@electron/remote'
+import { BrowserWindow, screen, desktopCapturer } from '@electron/remote'
 
 contextBridge.exposeInMainWorld('myWindowAPI', {
   minimize() {
@@ -9,14 +9,12 @@ contextBridge.exposeInMainWorld('myWindowAPI', {
     BrowserWindow.getFocusedWindow().close()
   },
   drag: ({ x, y }) => ipcRenderer.invoke('drag', { x, y }),
-  getMediaSources: async (types) => new Promise((resolve) => {
-
-    const dealSources = (e, sources) => {
-      resolve(JSON.parse(sources))
-      ipcRenderer.off('getMediaSources', dealSources)
+  getMediaSources: async (types) => await desktopCapturer.getSources({ types }),
+  getWorkAreaSize: () => {
+    const workAreaSize = screen.getPrimaryDisplay().workAreaSize
+    return {
+      width: workAreaSize.width,
+      height: workAreaSize.height
     }
-    ipcRenderer.on('getMediaSources', dealSources)
-    ipcRenderer.invoke('collectMediaSources', types)
-
-  })
+  }
 })
