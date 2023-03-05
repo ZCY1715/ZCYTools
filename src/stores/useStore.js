@@ -23,6 +23,12 @@ const useStore = defineStore('store', {
       title: "",
       systemVideo: true,
       humanVideo: true,
+    },
+    index4: {
+      index: 0,
+      cameras: [],
+      isDelay: false,
+      delayTime: 3,
     }
   }),
   getters: {

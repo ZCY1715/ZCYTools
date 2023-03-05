@@ -39,11 +39,13 @@ import Uploader from 'src/utils/Uploader'
 import { Loading, Notify } from 'quasar'
 import { formatTime, debounce } from 'src/utils/helper'
 import useStore from 'stores/useStore'
+import { storeToRefs } from 'pinia'
 import useKeyboard from 'src/hooks/useKeyboard'
 import useAudioAnalyserData from 'src/hooks/useAudioAnalyserData'
 import getBlobDuration from 'get-blob-duration'
 
 const store = useStore()
+const { index1, index3 } = storeToRefs(store)
 const isActive = ref(false)
 const title = ref("")
 const duration = ref(0)
@@ -113,12 +115,12 @@ onMounted(async () => {
   audioRef.value.addEventListener("timeupdate", onTimeUpdate)
   audioRef.value.addEventListener("ended", onEnded)
 
-  if (store.index3.eable) {
+  if (index3.value.eable) {
     asPartyThree.value = true
-    const url = store.index3.url
+    const url = index3.value.url
     audioRef.value.src = url
     duration.value = Math.floor(await getBlobDuration(url))
-    title.value = store.index3.title
+    title.value = index3.value.title
     return
   }
 
@@ -132,12 +134,12 @@ onMounted(async () => {
     loadMusic(music)
   })
 
-  if (store.index1.url) {
-    audioRef.value.src = store.index1.url
-    title.value = store.index1.title
-    volume.value = store.index1.volume
-    duration.value = store.index1.duration
-    audioRef.value.currentTime = store.index1.currentTime
+  if (index1.value.url) {
+    audioRef.value.src = index1.value.url
+    title.value = index1.value.title
+    volume.value = index1.value.volume
+    duration.value = index1.value.duration
+    audioRef.value.currentTime = index1.value.currentTime
   }
 
   audioRef.value.volume = volume.value / 100

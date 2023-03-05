@@ -15,8 +15,8 @@
       <q-btn color="" rounded glossy :disable="!source" icon="delete_forever" label="清除" @click="onClean" />
       <q-btn-dropdown auto-close rounded glossy color="" label="配置" :disable="isPlay" :disable-dropdown="isPlay">
         <q-list dense padding :class="$style.contorller">
-          <q-toggle v-model="store.index3.systemVideo" color="amber" label="系统音频" />
-          <q-toggle v-model="store.index3.humanVideo" color="amber" label="环境音频" />
+          <q-toggle v-model="index3.systemVideo" color="amber" label="系统音频" />
+          <q-toggle v-model="index3.humanVideo" color="amber" label="环境音频" />
         </q-list>
       </q-btn-dropdown>
     </q-btn-group>
@@ -30,6 +30,7 @@ import useMediaRecorder from 'src/hooks/useMediaRecorder'
 import { Notify } from 'quasar'
 import { useRouter } from 'vue-router'
 import useStore from 'stores/useStore'
+import { storeToRefs } from 'pinia'
 import getBlobDuration from 'get-blob-duration'
 
 const isPlay = ref(false)
@@ -43,6 +44,7 @@ const controller = ref(null)
 const title = ref("")
 const router = useRouter()
 const store = useStore()
+const { index3 } = storeToRefs(store)
 
 
 onMounted(async () => {
@@ -61,9 +63,9 @@ onMounted(async () => {
   })
   humanVideoStream.value = await navigator.mediaDevices.getUserMedia({ video: false, audio: true })
 
-  if (store.index3.eable) {
-    const url = store.index3.url
-    title.value = store.index3.title
+  if (index3.value.eable) {
+    const url = index3.value.url
+    title.value = index3.value.title
     source.value = url
     duration.value = Math.floor(await getBlobDuration(url))
     store.saveIndex3(false, "", "")
@@ -108,7 +110,7 @@ const onStartOrPause = () => {
     onClean()
 
     let stream
-    const { systemVideo, humanVideo } = store.index3
+    const { systemVideo, humanVideo } = index3.value
     if (systemVideo && humanVideo) {
       stream = mergeStream(systemVideoStream.value, humanVideoStream.value)
     } else if (humanVideo) {
@@ -144,7 +146,7 @@ const onSave = () => download(title.value, source.value)
 
 const onClean = () => {
   if (source.value) {
-    if (!store.index3.eable) {
+    if (!index3.value.eable) {
       window.URL.revokeObjectURL(source.value)
     }
     source.value = ""

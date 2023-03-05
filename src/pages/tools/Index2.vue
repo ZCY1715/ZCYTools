@@ -39,6 +39,7 @@ import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import Uploader from 'src/utils/Uploader'
 import { Notify, Loading } from 'quasar'
 import useStore from 'stores/useStore'
+import { storeToRefs } from 'pinia'
 import { formatTime, debounce } from 'src/utils/helper'
 import useClick from 'src/hooks/useClick'
 import useFullscreen from 'src/hooks/useFullscreen'
@@ -48,6 +49,7 @@ import useKeyboard from 'src/hooks/useKeyboard'
 import getBlobDuration from 'get-blob-duration'
 
 const store = useStore()
+const { index2 } = storeToRefs(store)
 const { vClick } = useClick()
 const isInit = ref(false)
 const isActive = ref(false)
@@ -148,12 +150,12 @@ onMounted(() => {
   videoRef.value.addEventListener("ended", onEnded)
 
 
-  if (store.index2.url) {
-    videoRef.value.src = store.index2.url
-    title.value = store.index2.title
-    volume.value = store.index2.volume
-    duration.value = store.index2.duration
-    videoRef.value.currentTime = store.index2.currentTime
+  if (index2.value.url) {
+    videoRef.value.src = index2.value.url
+    title.value = index2.value.title
+    volume.value = index2.value.volume
+    duration.value = index2.value.duration
+    videoRef.value.currentTime = index2.value.currentTime
     isInit.value = true
   }
 

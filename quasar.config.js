@@ -91,8 +91,11 @@ module.exports = configure(function (/* ctx */) {
           message: "loading..."
         },
         notify: {
-          timeout: 1000,
+          timeout: 2000,
           position: "top-right",
+          actions: [{ icon: 'close', color: 'white' }],
+          textColor: 'white',
+          classes: 'glossy'
         }
       },
 
