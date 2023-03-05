@@ -25,7 +25,7 @@ const useStore = defineStore('store', {
       humanVideo: true,
     },
     index4: {
-      index: 0,
+      deviceId: "",
       cameras: [],
       isDelay: false,
       delayTime: 3,
@@ -59,5 +59,7 @@ const useStore = defineStore('store', {
     }
   }
 })
+
+
 
 export default useStore

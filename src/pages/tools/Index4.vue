@@ -30,9 +30,11 @@ import useScreenSize from 'src/hooks/useScreenSize'
 import useStore from 'src/stores/useStore'
 import { storeToRefs } from 'pinia'
 import { Notify, Loading } from 'quasar'
+import useLocalStore from 'src/hooks/useLocalStore'
 
 const store = useStore()
 const { index4 } = storeToRefs(store)
+const localStore = useLocalStore()
 const videoRef = ref(null)
 const canvasRef = ref(null)
 const W = ref(800)
@@ -40,21 +42,21 @@ const H = ref(600)
 const canUsed = ref(false)
 const isShot = ref(false)
 const progress = ref(0)
-
+const allDeviceNames = ref([])
 const deviceName = computed({
   get() {
-    return canUsed.value ? index4.value.cameras[index4.value.index].name : "未检测到可用设备"
+    if (!canUsed.value) {
+      return "无可用设备"
+    }
+    return index4.value.cameras.find(c => c.id === index4.value.deviceId).name
   },
   set: async (v) => {
-    const index = index4.value.cameras.findIndex(c => c.name === v)
-    index4.value.index = index
     Loading.show()
-    await useDeviceById(index4.value.cameras[index].id)
+    const id = index4.value.cameras.find(c => c.name === v).id
+    index4.value.deviceId = id
+    await useDeviceById(id)
     Loading.hide()
   }
-})
-const allDeviceNames = computed(() => {
-  return index4.value.cameras?.map(c => c.name)
 })
 
 const useDeviceById = async id => {
@@ -73,37 +75,40 @@ const useDeviceById = async id => {
 
 onMounted(async () => {
 
+  index4.value.deviceId = await localStore.get("index4_deviceId")
+
   Loading.show()
 
-  if (!index4.value.cameras.length) {
-    const devices = await navigator.mediaDevices.enumerateDevices()
-    const cameras = devices.filter((d) => d.kind.includes('video')).map(c => ({
-      name: c.label,
-      id: c.deviceId
-    }))
-    if (!cameras.length) {
-      Loading.hide()
-      const notify = Notify.create({
-        type: "negative",
-        message: "无可用设备!",
-        position: "top",
-        timeout: 0
-      })
-      onBeforeUnmount(() => {
-        notify()
-      })
-    }
-    index4.value.cameras = cameras
+  const devices = await navigator.mediaDevices.enumerateDevices()
+  const cameras = devices.filter((d) => d.kind.includes('video')).map(c => ({
+    name: c.label,
+    id: c.deviceId
+  }))
+
+  if (!cameras.length) {
+    Loading.hide()
+    const notify = Notify.create({
+      type: "negative",
+      message: "未检测到可用设备!",
+      position: "top",
+      timeout: 0
+    })
+    onBeforeUnmount(() => {
+      notify()
+    })
+    return
+  }
+  index4.value.cameras = cameras
+  allDeviceNames.value = cameras.map(c => c.name)
+
+  if (index4.value.cameras.findIndex(c => c.id === index4.value.deviceId) < 0) {
+    const defaultDeviceId = index4.value.cameras[0].id
+    index4.value.deviceId = defaultDeviceId
   }
 
   canUsed.value = true
 
-  if (index4.value.cameras.length <= index4.value.index) {
-    index4.value.index = 0
-  }
-
-  const deviceId = index4.value.cameras[index4.value.index].id
-  await useDeviceById(deviceId)
+  await useDeviceById(index4.value.deviceId)
 
   const { width, height } = useScreenSize()
   H.value = W.value * height / width
@@ -161,6 +166,10 @@ const onDownload = () => {
   const url = canvasRef.value.toDataURL("image/png", 1)
   download(`zcytools-${new Date().getTime()}.png`, url)
 }
+
+store.$subscribe((mutation, state) => {
+  localStore.set("index4_deviceId", state.index4.deviceId)
+})
 
 </script>
 

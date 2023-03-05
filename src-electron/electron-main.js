@@ -1,7 +1,8 @@
-import { app, BrowserWindow, nativeTheme, Menu, ipcMain, desktopCapturer } from 'electron'
+import { app, BrowserWindow, nativeTheme, Menu, ipcMain } from 'electron'
 import { initialize, enable } from '@electron/remote/main'
 import path from 'path'
 import os from 'os'
+import initStore from './store'
 
 initialize()
 
@@ -33,6 +34,8 @@ function createWindow() {
   mainWindow.once("ready-to-show", () => {
     mainWindow.show()
   })
+
+  initStore()
 
   ipcMain.handle('drag', (e, data) => {
     const [x, y] = mainWindow.getPosition()

@@ -8,7 +8,7 @@ contextBridge.exposeInMainWorld('myWindowAPI', {
   close() {
     BrowserWindow.getFocusedWindow().close()
   },
-  drag: ({ x, y }) => ipcRenderer.invoke('drag', { x, y }),
+  drag: async ({ x, y }) => await ipcRenderer.invoke('drag', { x, y }),
   getMediaSources: async (types) => await desktopCapturer.getSources({ types }),
   getWorkAreaSize: () => {
     const workAreaSize = screen.getPrimaryDisplay().workAreaSize
@@ -16,5 +16,7 @@ contextBridge.exposeInMainWorld('myWindowAPI', {
       width: workAreaSize.width,
       height: workAreaSize.height
     }
-  }
+  },
+  getStoreValue: async (key) => await ipcRenderer.invoke('getStoreValue', key),
+  setStoreValue: async (key, value) => await ipcRenderer.invoke('setStoreValue', key, value)
 })
