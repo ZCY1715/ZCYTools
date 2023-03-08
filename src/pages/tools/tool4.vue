@@ -3,15 +3,15 @@
     <video :class="$style.showVideo" ref="videoRef" v-if="canUsed" />
     <span :class="$style.takeShot" @click="shot" v-show="!isShot">
       <q-icon name="add_a_photo" size="30px" color="white" />
-      <q-circular-progress v-if="index4.isDelay" :value="progress" size="50px" :thickness="0.15" color="orange"
+      <q-circular-progress v-if="tool4.isDelay" :value="progress" size="50px" :thickness="0.15" color="orange"
         track-color="grey-3" :class="$style.progress" animation-speed="100" />
     </span>
     <q-select color="white" :class="$style.selectDevice" dark standout label-color="orange" v-model="deviceName"
-      :options="allDeviceNames" label="设备" dense options-dark options-dense />
+      :options="allDevices.map(d => d.name)" label="设备" dense options-dark options-dense />
     <span :class="$style.delayShot">
-      <q-toggle v-model="index4.isDelay" color="orange" dark size="lg" dense label="延时拍摄" icon="alarm" left-label />
-      <q-input v-model="index4.delayTime" type="number" dark color="orange" dense label="延时时长" standout
-        :disable="!index4.isDelay" />
+      <q-toggle v-model="tool4.isDelay" color="orange" dark size="lg" dense label="延时拍摄" icon="alarm" left-label />
+      <q-input v-model="tool4.delayTime" type="number" dark color="orange" dense label="延时时长" standout
+        :disable="!tool4.isDelay" />
     </span>
     <div :class="$style.showPic" v-show="isShot">
       <canvas :width="W * .95" :height="H * .95" :class="$style.showPicCanvas" ref="canvasRef"></canvas>
@@ -33,7 +33,7 @@ import { Notify, Loading } from 'quasar'
 import useLocalStore from 'src/hooks/useLocalStore'
 
 const store = useStore()
-const { index4 } = storeToRefs(store)
+const { tool4 } = storeToRefs(store)
 const localStore = useLocalStore()
 const videoRef = ref(null)
 const canvasRef = ref(null)
@@ -42,18 +42,16 @@ const H = ref(600)
 const canUsed = ref(false)
 const isShot = ref(false)
 const progress = ref(0)
-const allDeviceNames = ref([])
+const allDevices = ref([])
 const deviceName = computed({
   get() {
-    if (!canUsed.value) {
-      return "无可用设备"
-    }
-    return index4.value.cameras.find(c => c.id === index4.value.deviceId).name
+    if (!canUsed.value) return "无可用设备"
+    return allDevices.value.find(c => c.id === tool4.value.deviceId).name
   },
   set: async (v) => {
     Loading.show()
-    const id = index4.value.cameras.find(c => c.name === v).id
-    index4.value.deviceId = id
+    const id = allDevices.value.find(c => c.name === v).id
+    tool4.value.deviceId = id
     await useDeviceById(id)
     Loading.hide()
   }
@@ -75,9 +73,9 @@ const useDeviceById = async id => {
 
 onMounted(async () => {
 
-  index4.value.deviceId = await localStore.get("index4_deviceId")
-
   Loading.show()
+
+  tool4.value.deviceId = await localStore.get("index4_deviceId")
 
   const devices = await navigator.mediaDevices.enumerateDevices()
   const cameras = devices.filter((d) => d.kind.includes('video')).map(c => ({
@@ -93,22 +91,18 @@ onMounted(async () => {
       position: "top",
       timeout: 0
     })
-    onBeforeUnmount(() => {
-      notify()
-    })
+    onBeforeUnmount(() => notify())
     return
   }
-  index4.value.cameras = cameras
-  allDeviceNames.value = cameras.map(c => c.name)
 
-  if (index4.value.cameras.findIndex(c => c.id === index4.value.deviceId) < 0) {
-    const defaultDeviceId = index4.value.cameras[0].id
-    index4.value.deviceId = defaultDeviceId
+
+  if (cameras.findIndex(c => c.id === tool4.value.deviceId) < 0) {
+    tool4.value.deviceId = allDevices.value[0].id
   }
 
+  allDevices.value = cameras
   canUsed.value = true
-
-  await useDeviceById(index4.value.deviceId)
+  await useDeviceById(tool4.value.deviceId)
 
   const { width, height } = useScreenSize()
   H.value = W.value * height / width
@@ -133,25 +127,18 @@ const draw = () => {
 
 const shot = async () => {
   if (!canUsed.value) return
-
-  if (index4.value.isDelay) {
-    await delay()
-  }
-
+  if (tool4.value.isDelay) await delay()
   isShot.value = true
   draw()
 }
 
 const delay = () => new Promise((resolve) => {
-  const delayTime = index4.value.delayTime * 10
+  const delayTime = tool4.value.delayTime * 10
 
   const circleRun = () => {
     progress.value++
-    if (progress.value !== 100) {
-      setTimeout(circleRun, delayTime)
-    } else {
-      resolve(true)
-    }
+    if (progress.value === 100) resolve(true)
+    else setTimeout(circleRun, delayTime)
   }
 
   setTimeout(circleRun, delayTime)
@@ -168,7 +155,7 @@ const onDownload = () => {
 }
 
 store.$subscribe((mutation, state) => {
-  localStore.set("index4_deviceId", state.index4.deviceId)
+  localStore.set("index4_deviceId", state.tool4.deviceId)
 })
 
 </script>

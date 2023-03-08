@@ -49,7 +49,7 @@ import useKeyboard from 'src/hooks/useKeyboard'
 import getBlobDuration from 'get-blob-duration'
 
 const store = useStore()
-const { index2 } = storeToRefs(store)
+const { tool2 } = storeToRefs(store)
 const { vClick } = useClick()
 const isInit = ref(false)
 const isActive = ref(false)
@@ -62,11 +62,7 @@ const currentTime = ref(0)
 const volume = ref(60)
 const showVolume = ref(false)
 const { togglePicInPic } = usePicInPic(videoRef, {
-  onLeave: () => {
-    if (videoRef.value.paused) {
-      isActive.value = false
-    }
-  },
+  onLeave: () => videoRef.value.paused && (isActive.value = false),
   beforeToggle: () => isInit.value
 })
 const { isFullscreen, toggleFullscreen } = useFullscreen(containerRef)
@@ -75,15 +71,12 @@ const { isSlient, debounceSlient } = useSilentMouse({
 })
 
 const onSuccess = async (name, url) => {
-  isActive.value = false
-  title.value = name
-  if (isInit.value) {
-    window.URL.revokeObjectURL(videoRef.value.src)
-  } else {
-    isInit.value = true
-  }
-  videoRef.value.src = url
 
+  title.value = name
+  if (isInit.value) window.URL.revokeObjectURL(videoRef.value.src)
+
+  isInit.value = true
+  videoRef.value.src = url
   duration.value = Math.floor(await getBlobDuration(url))
 
   Loading.hide()
@@ -104,8 +97,9 @@ const onFail = () => {
 
 const loadVideo = video => {
   Loading.show()
-  const url = window.URL.createObjectURL(video)
+  isActive.value = false
 
+  const url = window.URL.createObjectURL(video)
   const newVideo = document.createElement("video")
   newVideo.src = url
 
@@ -115,10 +109,7 @@ const loadVideo = video => {
 }
 
 const toggleActive = () => {
-  if (!isInit.value) {
-    isActive.value = false
-    return
-  }
+  if (!isInit.value) return isActive.value = false
   isActive.value = !isActive.value
 }
 
@@ -128,7 +119,7 @@ const progressChange = v => {
 }
 
 watch(isActive, () => isActive.value ? videoRef.value.play() : videoRef.value.pause())
-watch(volume, () => videoRef.value.volume = volume.value / 100)
+watch(volume, () => videoRef.value.volume = volume.value / 100, { flush: "post" })
 
 const onTimeUpdate = () => currentTime.value = videoRef.value.currentTime
 const onEnded = () => {
@@ -136,10 +127,10 @@ const onEnded = () => {
   isActive.value = false
 }
 
-onMounted(() => {
+onMounted(async () => {
+
   new Uploader({ el: containerRef.value, mode: "Drag" }, fileList => {
-    const video = fileList[0].file
-    loadVideo(video)
+    loadVideo(fileList[0].file)
   })
 
   new Uploader({ el: openFileRef.value, mode: "Click", pattern: "SingleFile" }, ({ file }) => {
@@ -150,12 +141,12 @@ onMounted(() => {
   videoRef.value.addEventListener("ended", onEnded)
 
 
-  if (index2.value.url) {
-    videoRef.value.src = index2.value.url
-    title.value = index2.value.title
-    volume.value = index2.value.volume
-    duration.value = index2.value.duration
-    videoRef.value.currentTime = index2.value.currentTime
+  if (tool2.value.url) {
+    videoRef.value.src = tool2.value.url
+    title.value = tool2.value.title
+    volume.value = tool2.value.volume
+    duration.value = Math.floor(await getBlobDuration(tool2.value.url))
+    videoRef.value.currentTime = tool2.value.currentTime
     isInit.value = true
   }
 
@@ -166,18 +157,15 @@ onBeforeUnmount(() => {
   videoRef.value.removeEventListener("timeupdate", onTimeUpdate)
   videoRef.value.removeEventListener("ended", onEnded)
 
-  store.saveIndex2(
+  store.saveTool2(
     videoRef.value.src,
     title.value,
-    duration.value,
     currentTime.value,
     volume.value
   )
 })
 
-const debounceNOTShowVolume = debounce(() => {
-  showVolume.value = false
-}, 1000)
+const debounceNOTShowVolume = debounce(() => showVolume.value = false, 1000)
 
 useKeyboard({
   onUp: () => {

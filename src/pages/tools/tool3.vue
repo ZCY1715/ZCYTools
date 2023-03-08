@@ -15,8 +15,8 @@
       <q-btn color="" rounded glossy :disable="!source" icon="delete_forever" label="清除" @click="onClean" />
       <q-btn-dropdown auto-close rounded glossy color="" label="配置" :disable="isPlay" :disable-dropdown="isPlay">
         <q-list dense padding :class="$style.contorller">
-          <q-toggle v-model="index3.systemVideo" color="amber" label="系统音频" />
-          <q-toggle v-model="index3.humanVideo" color="amber" label="环境音频" />
+          <q-toggle v-model="tool3.systemVideo" color="amber" label="系统音频" />
+          <q-toggle v-model="tool3.humanVideo" color="amber" label="环境音频" />
         </q-list>
       </q-btn-dropdown>
     </q-btn-group>
@@ -44,7 +44,7 @@ const controller = ref(null)
 const title = ref("")
 const router = useRouter()
 const store = useStore()
-const { index3 } = storeToRefs(store)
+const { tool3 } = storeToRefs(store)
 
 
 onMounted(async () => {
@@ -63,20 +63,21 @@ onMounted(async () => {
   })
   humanVideoStream.value = await navigator.mediaDevices.getUserMedia({ video: false, audio: true })
 
-  if (index3.value.eable) {
-    const url = index3.value.url
-    title.value = index3.value.title
+  if (tool3.value.isPreviewing) {
+    const { url, title: oTitle } = store.cleanTool1AsThreePart()
+    title.value = oTitle
     source.value = url
     duration.value = Math.floor(await getBlobDuration(url))
-    store.saveIndex3(false, "", "")
+    tool3.value.isPreviewing = false
     store.canTurnBack = false
   }
 })
 
 const onPreview = () => {
-  store.saveIndex3(true, source.value, title.value)
+  store.saveTool1AsThreePart(source.value, title.value)
+  tool3.value.isPreviewing = true
   store.canTurnBack = true
-  router.push({ name: "Index1" })
+  router.push({ name: "TOOL1" })
 }
 
 const onStop = () => {
@@ -110,7 +111,7 @@ const onStartOrPause = () => {
     onClean()
 
     let stream
-    const { systemVideo, humanVideo } = index3.value
+    const { systemVideo, humanVideo } = tool3.value
     if (systemVideo && humanVideo) {
       stream = mergeStream(systemVideoStream.value, humanVideoStream.value)
     } else if (humanVideo) {
@@ -146,7 +147,7 @@ const onSave = () => download(title.value, source.value)
 
 const onClean = () => {
   if (source.value) {
-    if (!index3.value.eable) {
+    if (!tool3.value.isPreviewing) {
       window.URL.revokeObjectURL(source.value)
     }
     source.value = ""

@@ -2,37 +2,37 @@
 
 export const menuLists = [
   {
-    name: 'Index1',
+    name: 'TOOL1',
     icon: 'music_note',
     text: "音乐",
   },
   {
-    name: 'Index2',
+    name: 'TOOL2',
     icon: 'smart_display',
     text: "视频",
   },
   {
-    name: 'Index3',
+    name: 'TOOL3',
     icon: 'mic',
     text: "录音",
   },
   {
-    name: 'Index4',
+    name: 'TOOL4',
     icon: 'add_a_photo',
     text: "拍摄",
   },
   {
-    name: 'Index5',
+    name: 'TOOL5',
     icon: 'video_call',
     text: "录像"
   },
   {
-    name: 'Index6',
+    name: 'TOOL6',
     icon: 'screenshot_monitor',
     text: "截图",
   },
   {
-    name: 'Index7',
+    name: 'TOOL7',
     icon: 'radio_button_checked',
     text: "录屏",
   },

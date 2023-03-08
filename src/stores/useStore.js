@@ -3,30 +3,30 @@ import { defineStore } from 'pinia'
 const useStore = defineStore('store', {
   state: () => ({
     canTurnBack: false,
-    index1: {
+    tool1: {
+      loadAsThreePart: {
+        eable: false,
+        url: "",
+        title: ""
+      },
       url: "",
       title: "",
-      duration: 0,
+      currentTime: 0,
+      volume: 60,
+    },
+    tool2: {
+      url: "",
+      title: "",
       currentTime: 0,
       volume: 60
     },
-    index2: {
-      url: "",
-      title: "",
-      duration: 0,
-      currentTime: 0,
-      volume: 60
-    },
-    index3: {
-      eable: false,
-      url: "",
-      title: "",
+    tool3: {
+      isPreviewing: false,
       systemVideo: true,
       humanVideo: true,
     },
-    index4: {
+    tool4: {
       deviceId: "",
-      cameras: [],
       isDelay: false,
       delayTime: 3,
     }
@@ -34,29 +34,30 @@ const useStore = defineStore('store', {
   getters: {
   },
   actions: {
-    saveIndex1(url, title, duration, currentTime, volume) {
-      this.index1 = {
-        url,
-        title,
-        duration,
-        currentTime,
-        volume
-      }
+    saveTool1(url, title, currentTime, volume) {
+      this.tool1.url = url
+      this.tool1.title = title
+      this.tool1.currentTime = currentTime
+      this.tool1.volume = volume
     },
-    saveIndex2(url, title, duration, currentTime, volume) {
-      this.index2 = {
-        url,
-        title,
-        duration,
-        currentTime,
-        volume
-      }
+    saveTool1AsThreePart(url, title) {
+      this.tool1.loadAsThreePart.eable = true
+      this.tool1.loadAsThreePart.url = url
+      this.tool1.loadAsThreePart.title = title
     },
-    saveIndex3(eable, url, title) {
-      this.index3.eable = eable
-      this.index3.url = url
-      this.index3.title = title
-    }
+    cleanTool1AsThreePart() {
+      this.tool1.loadAsThreePart.eable = false
+      const { url, title } = this.tool1.loadAsThreePart
+      this.tool1.loadAsThreePart.url = ""
+      this.tool1.loadAsThreePart.title = ""
+      return { url, title }
+    },
+    saveTool2(url, title, currentTime, volume) {
+      this.tool2.url = url
+      this.tool2.title = title
+      this.tool2.currentTime = currentTime
+      this.tool2.volume = volume
+    },
   }
 })
 

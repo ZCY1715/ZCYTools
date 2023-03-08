@@ -6,38 +6,38 @@ const routes = [
     children: [
       {
         path: "",
-        name: "Index1",
-        component: () => import('pages/tools/Index1.vue')
+        name: "TOOL1",
+        component: () => import('pages/tools/tool1.vue')
       },
       {
-        path: "Index2",
-        name: "Index2",
-        component: () => import('pages/tools/Index2.vue')
+        path: "TOOL2",
+        name: "TOOL2",
+        component: () => import('pages/tools/tool2.vue')
       },
       {
-        path: "Index3",
-        name: "Index3",
-        component: () => import('pages/tools/Index3.vue')
+        path: "TOOL3",
+        name: "TOOL3",
+        component: () => import('pages/tools/tool3.vue')
       },
       {
-        path: "Index4",
-        name: "Index4",
-        component: () => import('pages/tools/Index4.vue')
+        path: "TOOL4",
+        name: "TOOL4",
+        component: () => import('pages/tools/tool4.vue')
       },
       {
-        path: "Index5",
-        name: "Index5",
-        component: () => import('pages/tools/Index5.vue')
+        path: "TOOL5",
+        name: "TOOL5",
+        component: () => import('pages/tools/tool5.vue')
       },
       {
-        path: "Index6",
-        name: "Index6",
-        component: () => import('pages/tools/Index6.vue')
+        path: "TOOL6",
+        name: "TOOL6",
+        component: () => import('pages/tools/tool6.vue')
       },
       {
-        path: "Index7",
-        name: "Index7",
-        component: () => import('pages/tools/Index7.vue')
+        path: "TOOL7",
+        name: "TOOL7",
+        component: () => import('pages/tools/tool7.vue')
       },
     ]
   },

@@ -45,7 +45,7 @@ import useAudioAnalyserData from 'src/hooks/useAudioAnalyserData'
 import getBlobDuration from 'get-blob-duration'
 
 const store = useStore()
-const { index1, index3 } = storeToRefs(store)
+const { tool1 } = storeToRefs(store)
 const isActive = ref(false)
 const title = ref("")
 const duration = ref(0)
@@ -58,28 +58,20 @@ const openFileRef = ref(null)
 const canvasRef = ref(null)
 const timer = ref(null)
 const asPartyThree = ref(false)
-
-const debounceNOTShowVolume = debounce(() => {
-  showVolume.value = false
-}, 1000)
 const { dataArray, updateDataArray } = useAudioAnalyserData(audioRef)
 
 const onSuccess = async (name, url) => {
   title.value = name
-
   if (audioRef.value.src) {
     window.URL.revokeObjectURL(audioRef.value.src)
   }
   audioRef.value.src = url
-
   duration.value = Math.floor(await getBlobDuration(url))
-
   Loading.hide()
   Notify.create({
     type: "positive",
     message: "加载成功!",
   })
-
 }
 
 const onFail = () => {
@@ -99,10 +91,9 @@ function loadMusic(music) {
 
   newAudio.addEventListener("loadeddata", () => onSuccess(music.name, url), { once: true })
   newAudio.addEventListener("error", onFail, { once: true })
-
 }
 
-watch(volume, () => audioRef.value.volume = volume.value / 100)
+watch(volume, () => audioRef.value.volume = volume.value / 100, { flush: "post" })
 
 const onTimeUpdate = () => currentTime.value = audioRef.value.currentTime
 const onEnded = () => {
@@ -115,34 +106,30 @@ onMounted(async () => {
   audioRef.value.addEventListener("timeupdate", onTimeUpdate)
   audioRef.value.addEventListener("ended", onEnded)
 
-  if (index3.value.eable) {
+  if (tool1.value.loadAsThreePart.eable) {
     asPartyThree.value = true
-    const url = index3.value.url
+    const { url, title: oTitle } = tool1.value.loadAsThreePart
     audioRef.value.src = url
     duration.value = Math.floor(await getBlobDuration(url))
-    title.value = index3.value.title
+    title.value = oTitle
     return
   }
 
-
   new Uploader({ el: containerRef.value, mode: "Drag" }, fileList => {
-    const music = fileList[0].file
-    loadMusic(music)
+    loadMusic(fileList[0].file)
   })
 
-  new Uploader({ el: openFileRef.value, mode: "Click", pattern: "SingleFile" }, ({ file: music }) => {
-    loadMusic(music)
+  new Uploader({ el: openFileRef.value, mode: "Click", pattern: "SingleFile" }, ({ file }) => {
+    loadMusic(file)
   })
 
-  if (index1.value.url) {
-    audioRef.value.src = index1.value.url
-    title.value = index1.value.title
-    volume.value = index1.value.volume
-    duration.value = index1.value.duration
-    audioRef.value.currentTime = index1.value.currentTime
+  if (tool1.value.url) {
+    audioRef.value.src = tool1.value.url
+    title.value = tool1.value.title
+    volume.value = tool1.value.volume
+    duration.value = Math.floor(await getBlobDuration(tool1.value.url))
+    audioRef.value.currentTime = tool1.value.currentTime
   }
-
-  audioRef.value.volume = volume.value / 100
 
 })
 
@@ -201,14 +188,15 @@ onBeforeUnmount(() => {
 
   if (asPartyThree.value) return
 
-  store.saveIndex1(
+  store.saveTool1(
     audioRef.value.src,
     title.value,
-    duration.value,
     currentTime.value,
     volume.value
   )
 })
+
+const debounceNOTShowVolume = debounce(() => showVolume.value = false, 1000)
 
 useKeyboard({
   onUp: () => {
@@ -230,9 +218,7 @@ useKeyboard({
     if (currentTime.value + 5 > duration.value) return
     audioRef.value.currentTime = currentTime.value + 5
   },
-  onSpace: () => {
-    toggleActive()
-  }
+  onSpace: () => toggleActive()
 })
 
 </script>
