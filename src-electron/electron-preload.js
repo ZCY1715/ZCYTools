@@ -18,5 +18,6 @@ contextBridge.exposeInMainWorld('myWindowAPI', {
     }
   },
   getStoreValue: async (key) => await ipcRenderer.invoke('getStoreValue', key),
-  setStoreValue: async (key, value) => await ipcRenderer.invoke('setStoreValue', key, value)
+  setStoreValue: async (key, value) => await ipcRenderer.invoke('setStoreValue', key, value),
+  clearStoreValue: async () => await ipcRenderer.invoke("clearStoreValue")
 })

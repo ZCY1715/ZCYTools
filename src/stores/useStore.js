@@ -15,6 +15,11 @@ const useStore = defineStore('store', {
       volume: 60,
     },
     tool2: {
+      loadAsThreePart: {
+        eable: false,
+        url: "",
+        title: ""
+      },
       url: "",
       title: "",
       currentTime: 0,
@@ -29,6 +34,11 @@ const useStore = defineStore('store', {
       deviceId: "",
       isDelay: false,
       delayTime: 3,
+    },
+    tool5: {
+      isPreviewing: false,
+      audioDeviceId: "",
+      videoDeviceId: "",
     }
   }),
   getters: {
@@ -58,6 +68,18 @@ const useStore = defineStore('store', {
       this.tool2.currentTime = currentTime
       this.tool2.volume = volume
     },
+    saveTool2AsThreePart(url, title) {
+      this.tool2.loadAsThreePart.eable = true
+      this.tool2.loadAsThreePart.url = url
+      this.tool2.loadAsThreePart.title = title
+    },
+    cleanTool2AsThreePart() {
+      this.tool2.loadAsThreePart.eable = false
+      const { url, title } = this.tool2.loadAsThreePart
+      this.tool2.loadAsThreePart.url = ""
+      this.tool2.loadAsThreePart.title = ""
+      return { url, title }
+    }
   }
 })
 

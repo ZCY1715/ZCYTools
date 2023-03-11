@@ -1,11 +1,7 @@
 <template>
   <div :class="$style.container">
     <q-icon name="mic" size="100px" color="amber" />
-    <div :class="$style.showTime">
-      <span
-        :class="[$style.light, isPlay ? $style.light_red : $style.light_green, isPause ? '' : $style.light_twinkle]"></span>
-      <span>{{ formatTime(duration) }}</span>
-    </div>
+    <DisplayTime style="margin: 20px 0 20px 0;" :is-play="isPlay" :is-twinkle="!isPause" :time="duration" />
     <q-btn-group rounded>
       <q-btn color="" rounded glossy :disable="!source" icon="preview" label="预览" @click="onPreview" />
       <q-btn color="" rounded glossy :disable="!isPlay" icon="stop_circle" label="结束" @click="onStop" />
@@ -25,13 +21,14 @@
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
-import { formatTime, download, mergeStream } from 'src/utils/helper'
+import { download, mergeStream } from 'src/utils/helper'
 import useMediaRecorder from 'src/hooks/useMediaRecorder'
 import { Notify } from 'quasar'
 import { useRouter } from 'vue-router'
 import useStore from 'stores/useStore'
 import { storeToRefs } from 'pinia'
 import getBlobDuration from 'get-blob-duration'
+import DisplayTime from 'components/DisplayTime.vue'
 
 const isPlay = ref(false)
 const isPause = ref(true)
@@ -126,7 +123,7 @@ const onStartOrPause = () => {
       return
     }
 
-    controller.value = useMediaRecorder(stream, {
+    controller.value = useMediaRecorder(stream, null, {
       onStop: blob => {
         source.value = window.URL.createObjectURL(blob)
         title.value = `zcytools_${new Date().getTime()}.mp3`
@@ -170,51 +167,6 @@ onBeforeUnmount(() => {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-}
-
-.showTime {
-  margin: 50px 0 50px 0;
-  color: #aaa;
-  font-size: 20px;
-  width: 100%;
-  height: 40px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-@keyframes showAndHide {
-  0% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0;
-  }
-
-  100% {
-    opacity: 1;
-  }
-}
-
-.light {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  margin-right: 10px;
-  opacity: 1;
-}
-
-.light_twinkle {
-  animation: showAndHide 1s infinite;
-}
-
-.light_green {
-  background-color: rgb(11, 235, 11);
-}
-
-.light_red {
-  background-color: red;
 }
 
 .contorller {

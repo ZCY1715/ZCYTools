@@ -11,4 +11,8 @@ export default function initStore() {
   ipcMain.handle('setStoreValue', (e, key, value) => {
     store.set(key, value)
   })
+
+  ipcMain.handle('clearStoreValue', (e) => {
+    store.clear()
+  })
 }

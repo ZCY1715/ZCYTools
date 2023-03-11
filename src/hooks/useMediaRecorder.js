@@ -1,9 +1,11 @@
 
+export default function (stream, type, { onStart, onPause, onResume, onStop }) {
 
-export default function (stream, { onStart, onPause, onResume, onStop }) {
+  const mediaRecorder = new MediaRecorder(stream, {
+    mimeType: 'video/webm;codecs=h264'
+  })
 
-  const mediaRecorder = new MediaRecorder(stream)
-
+  let isActive = false
   const data = []
 
   mediaRecorder.ondataavailable = (e) => {
@@ -11,16 +13,24 @@ export default function (stream, { onStart, onPause, onResume, onStop }) {
   }
 
   const controller = {
-    start: () => mediaRecorder.start(),
+    start: () => {
+      mediaRecorder.start()
+      isActive = true
+    },
     pause: () => mediaRecorder.pause(),
     resume: () => mediaRecorder.resume(),
-    stop: () => mediaRecorder.stop()
+    stop: () => {
+      if (isActive) {
+        mediaRecorder.stop()
+        isActive = false
+      }
+    }
   }
 
   onStart && (mediaRecorder.onstart = onStart)
   onPause && (mediaRecorder.onpause = onPause)
   onResume && (mediaRecorder.onresume = onResume)
-  onStop && (mediaRecorder.onstop = () => onStop(new Blob(data, { type: mediaRecorder.mimeType })))
+  onStop && (mediaRecorder.onstop = () => onStop(new Blob(data, { type: type ?? mediaRecorder.mimeType })))
 
   return controller
 

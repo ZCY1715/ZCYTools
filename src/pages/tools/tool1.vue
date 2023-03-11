@@ -115,14 +115,6 @@ onMounted(async () => {
     return
   }
 
-  new Uploader({ el: containerRef.value, mode: "Drag" }, fileList => {
-    loadMusic(fileList[0].file)
-  })
-
-  new Uploader({ el: openFileRef.value, mode: "Click", pattern: "SingleFile" }, ({ file }) => {
-    loadMusic(file)
-  })
-
   if (tool1.value.url) {
     audioRef.value.src = tool1.value.url
     title.value = tool1.value.title
@@ -130,6 +122,14 @@ onMounted(async () => {
     duration.value = Math.floor(await getBlobDuration(tool1.value.url))
     audioRef.value.currentTime = tool1.value.currentTime
   }
+
+  new Uploader({ el: containerRef.value, mode: "Drag" }, fileList => {
+    loadMusic(fileList[0].file)
+  })
+
+  new Uploader({ el: openFileRef.value, mode: "Click", pattern: "SingleFile" }, ({ file }) => {
+    loadMusic(file)
+  })
 
 })
 

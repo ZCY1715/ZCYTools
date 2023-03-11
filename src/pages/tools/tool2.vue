@@ -129,17 +129,19 @@ const onEnded = () => {
 
 onMounted(async () => {
 
-  new Uploader({ el: containerRef.value, mode: "Drag" }, fileList => {
-    loadVideo(fileList[0].file)
-  })
 
-  new Uploader({ el: openFileRef.value, mode: "Click", pattern: "SingleFile" }, ({ file }) => {
-    loadVideo(file)
-  })
 
   videoRef.value.addEventListener("timeupdate", onTimeUpdate)
   videoRef.value.addEventListener("ended", onEnded)
 
+  if (tool2.value.loadAsThreePart.eable) {
+    const { url, title: oTitle } = tool2.value.loadAsThreePart
+    videoRef.value.src = url
+    duration.value = Math.floor(await getBlobDuration(url))
+    title.value = oTitle
+    isInit.value = true
+    return
+  }
 
   if (tool2.value.url) {
     videoRef.value.src = tool2.value.url
@@ -150,12 +152,22 @@ onMounted(async () => {
     isInit.value = true
   }
 
+  new Uploader({ el: containerRef.value, mode: "Drag" }, fileList => {
+    loadVideo(fileList[0].file)
+  })
+
+  new Uploader({ el: openFileRef.value, mode: "Click", pattern: "SingleFile" }, ({ file }) => {
+    loadVideo(file)
+  })
+
 })
 
 onBeforeUnmount(() => {
 
   videoRef.value.removeEventListener("timeupdate", onTimeUpdate)
   videoRef.value.removeEventListener("ended", onEnded)
+
+  if (tool2.value.loadAsThreePart.eable) return
 
   store.saveTool2(
     videoRef.value.src,

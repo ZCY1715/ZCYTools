@@ -1,3 +1,12 @@
+import { ref } from 'vue'
+
+const sizeRef = ref(null)
+
 export default () => {
-  return window.myWindowAPI.getWorkAreaSize()
+
+  if (!sizeRef.value) {
+    sizeRef.value = window.myWindowAPI.getWorkAreaSize()
+  }
+
+  return sizeRef.value
 }
